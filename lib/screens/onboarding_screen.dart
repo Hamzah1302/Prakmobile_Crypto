@@ -19,45 +19,54 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Timer? _timer;
 
   // Data untuk setiap halaman onboarding
-  final List<Map<String, String>> _onboardingData = [
+  final List<Map<String, dynamic>> _onboardingData = [
     {
       "image": "assets/images/logo.png",
       "title": "Infoin",
       "subtitle": "",
+
       "isLogo": "true" // Tandai ini sebagai halaman logo
     },
     {
       "image": "assets/images/onboarding.jpg",
-      "title": "Get the latest news\nfrom reliable sources",
+      "textParts": [
+        {"text": "Get the latest news\nfrom ", "color": Colors.white},
+        {"text": "reliable sources", "color": Colors.red},
+      ],
+      "isLogo": "false",
       "subtitle": "",
-      "isLogo": "false"
     },
     {
       "image": "assets/images/onboarding2.png",
-      "title": "Get actual news from\naround the world",
+      "textParts": [
+        {"text": "Get actual news from\naround ", "color": Colors.white},
+        {"text": "the world", "color": Colors.red},
+      ],
       "subtitle": "",
       "isLogo": "false"
     },
   ];
-
   // initstate untuk timer
   @override
   void initState() {
-   _timer = Timer(const Duration(milliseconds: 3000), () {
-    if (_currentPage == 0 && mounted) {
-      _pageController.nextPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
-    }
-   });
+    _timer = Timer(const Duration(milliseconds: 3000), () {
+      if (_currentPage == 0 && mounted) {
+        _pageController.nextPage(
+            duration: const Duration(milliseconds: 400),
+            curve: Curves.easeInOut);
+      }
+    });
     super.initState();
   }
 
- // menambahkan dispose untuk membatalkan timer;
+  // menambahkan dispose untuk membatalkan timer;
   @override
   void dispose() {
     _pageController.dispose();
     _timer?.cancel();
     super.dispose();
   }
+
   // Fungsi untuk menandai bahwa onboarding telah selesai dan navigasi
   void _finishOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
@@ -70,6 +79,25 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         MaterialPageRoute(builder: (context) => const AuthCheck()),
       );
     }
+  }
+
+  Widget _buildRichText(List<Map<String, dynamic>> textParts) {
+    return RichText(
+      textAlign: TextAlign.center,
+      text: TextSpan(
+        style: const TextStyle(
+          fontSize: 28.0,
+          fontWeight: FontWeight.bold,
+          height: 1.3,
+        ),
+        children: textParts.map((part) {
+          return TextSpan(
+            text: part['text'],
+            style: TextStyle(color: part['color']),
+          );
+        }).toList(),
+      ),
+    );
   }
 
   @override
@@ -96,7 +124,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Image.asset(item['image']!, height: 100),
+                        Image.asset('assets/images/onboarding.jpg',
+                            height: 100),
                         const SizedBox(height: 20),
                         const CircularProgressIndicator(),
                       ],
@@ -107,7 +136,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               // Halaman carousel dengan gambar latar
               return _buildPageContent(
                 imagePath: item['image']!,
-                title: item['title']!,
+                textParts: item['textParts'],
               );
             },
           ),
@@ -124,31 +153,35 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   }
 
   // Widget untuk membangun konten halaman carousel
-  Widget _buildPageContent({required String imagePath, required String title}) {
+  Widget _buildPageContent({
+    required String imagePath,
+    required List<Map<String, dynamic>> textParts,
+  }) {
     return Container(
       decoration: BoxDecoration(
         image: DecorationImage(
           image: AssetImage(imagePath),
           fit: BoxFit.cover,
           colorFilter: ColorFilter.mode(
-            Colors.black.withOpacity(0.5),
+            Colors.black.withAlpha((255 * 0.5).round()),
             BlendMode.darken,
           ),
         ),
       ),
-      child: Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 40.0),
-          child: Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24.0,
-              fontWeight: FontWeight.bold,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Spacer(
+            flex: 3,
+          ),
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40.0),
+              child: _buildRichText(textParts),
             ),
           ),
-        ),
+          const Spacer(flex: 2),
+        ],
       ),
     );
   }
@@ -165,12 +198,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       children: [
         // Tombol Skip hanya muncul di halaman kedua
         if (_currentPage == 1)
-          TextButton(
+          ElevatedButton(
             onPressed: _finishOnboarding,
-            child: const Text('Skip', style: TextStyle(color: Colors.white, fontSize: 16)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red, // Latar belakang merah
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+            ),
+            child: const Text(
+              'Skip',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
           ),
         if (_currentPage != 1) const Spacer(), // Jaga posisi tombol kanan
-        
+
         // Tombol Next atau Get Started
         ElevatedButton(
           onPressed: () {
@@ -186,13 +229,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.red,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(30),
             ),
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
           ),
           child: Text(
-            _currentPage == _onboardingData.length - 1 ? 'Get Started' : 'Next',
-            style: const TextStyle(color: Colors.white, fontSize: 16)
-          ),
+              _currentPage == _onboardingData.length - 1
+                  ? 'Get Started'
+                  : 'Next',
+              style: const TextStyle(color: Colors.white, fontSize: 16)),
         ),
       ],
     );
