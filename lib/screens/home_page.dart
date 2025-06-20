@@ -19,6 +19,8 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
   // Mengelola state untuk artikel
   List<Article> _allArticles = [];
   List<Article> _featuredArticles = [];
+  List<Article> _topStoriesArticles = [];
+
   bool _isLoading = true;
   String _error = '';
 
@@ -43,6 +45,9 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           _allArticles = articles;
           // Mengambil 2 artikel pertama untuk bagian "Featured"
           _featuredArticles = articles.take(2).toList();
+          _topStoriesArticles = articles
+              .where((article) => article.isTrending)
+              .toList();
           _isLoading = false;
         });
       }
@@ -120,7 +125,7 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
         controller: _tabController,
         children: [
           _buildHeadlineTab(),
-          const Center(child: Text('Konten Top Stories')),
+          _buildTopStoriesTab(),
           const Center(child: Text('Konten Similar News')),
         ],
       ),
@@ -147,6 +152,28 @@ class _HomePageState extends State<HomePage> with SingleTickerProviderStateMixin
           const SizedBox(height: 12),
           _buildAllNewsSection(),
         ],
+      ),
+    );
+  }
+
+  //Top Stories Section
+  Widget _buildTopStoriesTab() {
+    if (_topStoriesArticles.isEmpty) {
+      return const Center(
+        child: Text('Saat ini tidak ada berita utama.'),
+      );
+    }
+    
+    return RefreshIndicator(
+      onRefresh: _fetchArticles,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16.0),
+        itemCount: _topStoriesArticles.length,
+        itemBuilder: (context, index) {
+          final article = _topStoriesArticles[index];
+          // Menggunakan kembali widget yang sama dengan di "All News"
+          return ArticleListItem(article: article);
+        },
       ),
     );
   }
