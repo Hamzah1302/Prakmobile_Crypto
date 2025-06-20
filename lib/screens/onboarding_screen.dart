@@ -1,5 +1,5 @@
 // lib/screens/onboarding_screen.dart
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:prakmobile_crypto/auth_service.dart';
 import 'package:prakmobile_crypto/login_page.dart';
@@ -16,6 +16,7 @@ class OnboardingScreen extends StatefulWidget {
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
+  Timer? _timer;
 
   // Data untuk setiap halaman onboarding
   final List<Map<String, String>> _onboardingData = [
@@ -39,6 +40,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     },
   ];
 
+  // initstate untuk timer
+  @override
+  void initState() {
+   _timer = Timer(const Duration(milliseconds: 3000), () {
+    if (_currentPage == 0 && mounted) {
+      _pageController.nextPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOut);
+    }
+   });
+    super.initState();
+  }
+
+ // menambahkan dispose untuk membatalkan timer;
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _timer?.cancel();
+    super.dispose();
+  }
   // Fungsi untuk menandai bahwa onboarding telah selesai dan navigasi
   void _finishOnboarding() async {
     final prefs = await SharedPreferences.getInstance();
